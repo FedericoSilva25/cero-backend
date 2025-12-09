@@ -54,15 +54,44 @@ export function classifyInput(text: string): InputClassification {
 
 // Filtro de salida: asegura que la respuesta respete las reglas ontológicas
 export function isOutputValid(answer: string): boolean {
-    const lower = answer.toLowerCase();
+    const text = answer.trim();
+    const lower = text.toLowerCase();
 
+    // 1) Longitud máxima (un poco más generosa para permitir 2-4 frases)
+    const maxChars = 280;
+    if (text.length === 0 || text.length > maxChars) return false;
+
+    // 2) Permitimos como máximo UNA pregunta
+    const questionMarks = (text.match(/\?/g) || []).length;
+    if (questionMarks > 1) return false;
+
+    // 3) Bloquear preguntas directivas típicas de consejo
+    const forbiddenQuestionPatterns = [
+        "¿qué deberías",
+        "¿que deberias",
+        "¿qué tendrías que",
+        "¿que tendrias que",
+        "¿qué podrías hacer",
+        "¿que podrias hacer",
+        "¿qué vas a hacer",
+        "¿que vas a hacer",
+        "¿cómo podrías",
+        "¿como podrias"
+    ];
+    for (const p of forbiddenQuestionPatterns) {
+        if (lower.includes(p)) return false;
+    }
+
+    // 4) Mantener bloqueos de identidad
     const identidadProhibida = [
         "yo creo", "yo pienso", "yo siento",
         "en mi opinion", "en mi opinión",
         "como ia", "como inteligencia", "como modelo",
-        "puedo ayudarte", "estoy aca para ayudarte", "estoy acá para ayudarte"
+        "puedo ayudarte", "estoy aca para ayudarte", "estoy acá para ayudarte",
+        "fui entrenado", "soy una ia"
     ];
 
+    // 5) Bloqueos de consejo
     const consejoProhibido = [
         "deberias", "deberías",
         "te recomiendo", "te aconsejo",
@@ -72,9 +101,12 @@ export function isOutputValid(answer: string): boolean {
         "intenta ", "intentá ",
         "proba ", "probá ",
         "empeza ", "empezá ",
-        "organiza ", "organizá "
+        "organiza ", "organizá ",
+        "tenes que ", "tenés que ",
+        "podrias intentar", "podrías intentar"
     ];
 
+    // 6) Bloqueos de empatía programada
     const empatiaProhibida = [
         "entiendo como te sentis", "entiendo cómo te sentís",
         "es normal que te pase", "es normal sentirse asi", "es normal sentirse así",
@@ -82,37 +114,36 @@ export function isOutputValid(answer: string): boolean {
         "no estas solo", "no estás solo",
         "animo", "ánimo",
         "fuerza",
-        "tranquilo", "tranquila"
+        "tranquilo", "tranquila",
+        "lamento que",
+        "estoy acá para acompañarte", "estoy aca para acompanarte"
     ];
 
-    const lists = [identidadProhibida, consejoProhibido, empatiaProhibida];
-
-    for (const list of lists) {
-        if (list.some(f => lower.includes(f))) {
-            return false;
-        }
-    }
-
-    // Frases prohibidas extra (alineadas al Manual)
-    const frasesProhibidas = [
-        "no te preocupes",
-        "es normal que pase eso",
+    // 7) Bloqueos de espiritualidad/futuro/propósito
+    const espiritualidadProhibida = [
+        "tu propósito", "tu proposito",
+        "tu destino",
+        "guías espirituales", "guias espirituales",
+        "alma",
+        "ángeles", "angeles",
+        "karma",
+        "universo te",
+        "energías", "energias",
         "todo va a estar bien",
-        "tu propósito es",
-        "no es tan grave",
-        "a veces la vida"
+        "no te preocupes",
+        "vos podés", "vos podes"
     ];
 
-    for (const f of frasesProhibidas) {
-        if (lower.includes(f)) return false;
+    const allForbidden = [
+        ...identidadProhibida,
+        ...consejoProhibido,
+        ...empatiaProhibida,
+        ...espiritualidadProhibida
+    ];
+
+    for (const pattern of allForbidden) {
+        if (lower.includes(pattern)) return false;
     }
-
-    // Longitud máxima
-    const maxChars = 180;
-    if (answer.length > maxChars) return false;
-
-    // Opcional: evitar preguntas tipo coaching
-    if (answer.includes("?")) return false;
 
     return true;
 }
