@@ -52,6 +52,27 @@ export function isOutputValid(answer: string): boolean {
     const maxChars = 280;
     if (text.length === 0 || text.length > maxChars) return false;
 
+    // 1.b) Mínimo de frases: exigimos al menos 3 oraciones
+    const sentences = text.split(/[.!?¡¿]+/).filter(s => s.trim().length > 0);
+    if (sentences.length < 3) return false;
+
+    // 1.c) Bloquear respuestas que solo sean rechazo práctico
+    const pureRejectionPatterns = [
+        "no respondo lo práctico",
+        "no respondo lo practico",
+        "no respondo solicitudes prácticas",
+        "no respondo solicitudes practicas",
+        "eso no entra en mí",
+        "eso no entra en mi"
+    ];
+
+    for (const p of pureRejectionPatterns) {
+        // si la frase de rechazo aparece y casi no hay más contenido, la invalidamos
+        if (lower.includes(p) && text.length < 140) {
+            return false;
+        }
+    }
+
     // 2) Permitimos como máximo UNA pregunta
     const questionMarks = (text.match(/\?/g) || []).length;
     if (questionMarks > 1) return false;
