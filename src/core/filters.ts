@@ -1,31 +1,22 @@
 // src/core/filters.ts
 
 const PRACTICAL_PATTERNS = [
-    // creación / redacción
-    "armame", "armáme", "escribime", "escribí",
-    "haceme", "hacé", "redacta", "redactá",
-    "resumime", "resumí", "resumen de",
-
-    // pasos / listas / organización
-    "lista de", "pasos para",
-    "plan de", "organiza", "organizá", "organizar",
-
-    // consejos / qué hacer
-    "que hago", "qué hago",
-    "que deberia", "qué debería",
-    "recomendame", "me recomiendas", "me recomendás",
-    "que me recomendas", "qué me recomendás",
-
-    // explicaciones
-    "explicame", "explícame", "explica", "explicá",
-    "ayudame a entender", "ayúdame a entender",
-
-    // futuro / predicción
-    "que va a pasar", "qué va a pasar",
-    "como me va a ir", "cómo me va a ir",
-
-    // interpretación simbólica
-    "soñe que", "soñé que", "que significa", "qué significa"
+    // Solo consideramos "práctico" cuando se pide algo concreto a hacer por fuera de la propia experiencia
+    "escribime un mail",
+    "redactá un mail",
+    "redacta un mail",
+    "armame un cv",
+    "hazme un cv",
+    "haceme un cv",
+    "pasos para",
+    "lista de pasos",
+    "receta de",
+    "programá",
+    "programa",
+    "codigo",
+    "código",
+    "generá un mensaje",
+    "genera un mensaje"
 ];
 
 export type InputClassification = {
