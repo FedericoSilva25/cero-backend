@@ -48,8 +48,9 @@ export function isOutputValid(answer: string): boolean {
     const text = answer.trim();
     const lower = text.toLowerCase();
 
-    // 1) Mínimo de caracteres para evitar respuestas vacías (Manual 2.0: sin límite máximo)
+    // 1) Mínimo de caracteres para evitar respuestas vacías (Manual 2.0: sin límite máximo estricto, pero ponemos tope técnico)
     if (text.length < 40) return false;
+    if (text.length > 1200) return false; // Tope técnico para evitar desbordes
 
     // 1.c) Bloquear respuestas que solo sean rechazo práctico
     const pureRejectionPatterns = [
@@ -68,7 +69,7 @@ export function isOutputValid(answer: string): boolean {
         }
     }
 
-    // 2) Permitimos como máximo UNA pregunta
+    // 2) Permitimos como máximo UNA pregunta (Manual 2.0: preguntas opcionales, máximo 1)
     const questionMarks = (text.match(/\?/g) || []).length;
     if (questionMarks > 1) return false;
 
