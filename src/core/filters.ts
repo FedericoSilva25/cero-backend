@@ -48,13 +48,8 @@ export function isOutputValid(answer: string): boolean {
     const text = answer.trim();
     const lower = text.toLowerCase();
 
-    // 1) Longitud máxima (un poco más generosa para permitir 2-4 frases)
-    const maxChars = 280;
-    if (text.length === 0 || text.length > maxChars) return false;
-
-    // 1.b) Mínimo de frases: exigimos al menos 3 oraciones
-    const sentences = text.split(/[.!?¡¿]+/).filter(s => s.trim().length > 0);
-    if (sentences.length < 3) return false;
+    // 1) Mínimo de caracteres para evitar respuestas vacías (Manual 2.0: sin límite máximo)
+    if (text.length < 40) return false;
 
     // 1.c) Bloquear respuestas que solo sean rechazo práctico
     const pureRejectionPatterns = [
