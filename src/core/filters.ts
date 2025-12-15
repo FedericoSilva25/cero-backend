@@ -16,7 +16,13 @@ const PRACTICAL_PATTERNS = [
     "codigo",
     "código",
     "generá un mensaje",
-    "genera un mensaje"
+    "genera un mensaje",
+    "que hago", "qué hago",
+    "que deberia", "qué debería",
+    "decime que hacer", "decime qué hacer",
+    "ayudame a decidir", "ayúdame a decidir",
+    "me conviene",
+    "recomendame", "recoméndame"
 ];
 
 export type InputClassification = {
@@ -48,9 +54,25 @@ export function isOutputValid(answer: string): boolean {
     const text = answer.trim();
     const lower = text.toLowerCase();
 
-    // 1) Mínimo de caracteres para evitar respuestas vacías (Manual 2.0: sin límite máximo estricto, pero ponemos tope técnico)
+    // 1) Mínimo de caracteres para evitar respuestas vacías
     if (text.length < 40) return false;
-    if (text.length > 1200) return false; // Tope técnico para evitar desbordes
+    // 1.a) Tope técnico (Manual 2.0 permite extensión, pero ponemos límite sano)
+    const maxChars = 420;
+    if (text.length > maxChars) return false;
+
+    // 1.b) Bloquear formato “informe” (A/B, listas, títulos)
+    const forbiddenFormats: RegExp[] = [
+        /^\s*[A-D]\)\s+/m,           // A) B) C) D)
+        /^\s*\d+\)\s+/m,             // 1) 2)
+        /^\s*[-•]\s+/m,              // bullets
+        /reflejo emocional/i,
+        /descripci[oó]n fenomenol[oó]gica/i,
+        /descripci[oó]n ontol[oó]gica/i,
+    ];
+
+    for (const rx of forbiddenFormats) {
+        if (rx.test(text)) return false;
+    }
 
     // 1.c) Bloquear respuestas que solo sean rechazo práctico
     const pureRejectionPatterns = [
@@ -69,9 +91,13 @@ export function isOutputValid(answer: string): boolean {
         }
     }
 
-    // 2) Permitimos como máximo UNA pregunta (Manual 2.0: preguntas opcionales, máximo 1)
+    // 1.d) Mínimo de frases (3) según Manual 2.0
+    const sentences = text.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
+    if (sentences.length < 3) return false;
+
+    // 2) Exigimos exactamente UNA pregunta (Manual 2.0 estricto)
     const questionMarks = (text.match(/\?/g) || []).length;
-    if (questionMarks > 1) return false;
+    if (questionMarks !== 1) return false;
 
     // 3) Bloquear preguntas directivas típicas de consejo
     const forbiddenQuestionPatterns = [
