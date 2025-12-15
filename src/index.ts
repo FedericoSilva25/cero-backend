@@ -23,7 +23,7 @@ app.post("/reflect", async (req, res) => {
 
         if (!text) {
             return res.json({
-                reply: "Eso no entra en mí.",
+                reply: "No hay nada dicho todavía: aparece vacío en la forma. La ausencia de contenido también es un movimiento. La pregunta es qué intentás evitar diciendo nada. ¿Qué aparece si escribís la frase tal como aparece en vos, sin corregir? Ese es el borde.",
                 rejected: true,
                 category: "EMPTY"
             });

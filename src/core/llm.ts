@@ -33,18 +33,17 @@ export async function getCeroLikeResponse(userText: string): Promise<string> {
     const response = await client.chat.completions.create({
         model: CERO_MODEL,
         messages: [
-            {
-                role: "system",
-                content: CERO_SYSTEM_PROMPT
-            },
+            { role: "system", content: CERO_SYSTEM_PROMPT },
             {
                 role: "user",
-                content: userText
+                content:
+                    `${userText}\n\n` +
+                    `Respondé en 3 a 6 frases, un solo bloque, sin listas ni “A)/B)”. Incluí UNA sola pregunta.`
             }
         ],
-        temperature: 0.3,
-        top_p: 0.5,
-        max_tokens: 80
+        temperature: 0.45,
+        top_p: 0.9,
+        max_tokens: 220
     });
 
     const content =
