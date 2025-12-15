@@ -39,13 +39,23 @@ app.post("/reflect", async (req, res) => {
             });
         }
 
-        // 2) Llamada al modelo real de CERO (OpenAI)
-        const rawAnswer = await getCeroLikeResponse(text);
+        // 2) Llamada al modelo real de CERO (OpenAI) con reintentos
+        let rawAnswer = "";
+        let ok = false;
 
-        // 3) Filtro de salida: corta si el modelo se "porta mal"
-        if (!isOutputValid(rawAnswer)) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            rawAnswer = await getCeroLikeResponse(text);
+
+            if (isOutputValid(rawAnswer)) {
+                ok = true;
+                break;
+            }
+        }
+
+        // 3) Si el modelo no logró pasar el filtro, devolvemos fallback CERO válido
+        if (!ok) {
             return res.json({
-                reply: getRandomRejection(),
+                reply: getRandomRejection(), // ya es CERO válido (3–6 frases + 1 pregunta)
                 rejected: true,
                 category: "OUTPUT_FILTER"
             });
@@ -60,7 +70,7 @@ app.post("/reflect", async (req, res) => {
     } catch (e) {
         console.error("[CERO] Error en /reflect:", e);
         return res.json({
-            reply: "Error de conexión.",
+            reply: "No apareció respuesta: el canal se cortó, no el contenido. La ausencia de reflejo también muestra el impulso a cerrar. ¿Qué aparece en vos cuando no hay devolución inmediata? Ese es el borde.",
             rejected: true,
             category: "ERROR"
         });
