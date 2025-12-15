@@ -12,9 +12,11 @@ const PRACTICAL_PATTERNS = [
     "lista de pasos",
     "receta de",
     "programá",
-    "programa",
-    "codigo",
-    "código",
+    "programa ", // con espacio para evitar "programación"
+    "escribi codigo",
+    "escribí código",
+    "arregla el codigo",
+    "arreglá el código",
     "generá un mensaje",
     "genera un mensaje",
     "que hago", "qué hago",
@@ -55,7 +57,7 @@ export function isOutputValid(answer: string): boolean {
     const lower = text.toLowerCase();
 
     // 1) Mínimo de caracteres para evitar respuestas vacías
-    if (text.length < 40) return false;
+    if (text.length < 25) return false;
     // 1.a) Tope técnico (Manual 2.0 permite extensión, pero ponemos límite sano)
     const maxChars = 420;
     if (text.length > maxChars) return false;
