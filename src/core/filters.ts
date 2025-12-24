@@ -51,83 +51,77 @@ export function classifyInput(text: string): InputClassification {
     };
 }
 
-// Filtro de salida: asegura que la respuesta respete las reglas ontológicas
 export function isOutputValid(answer: string): boolean {
-    const text = answer.trim();
+    const raw = String(answer ?? "");
+    const text = raw.trim();
     const lower = text.toLowerCase();
 
-    // 1) Mínimo de caracteres para evitar respuestas vacías
-    if (text.length < 25) return false;
-    // 1.a) Tope técnico (Manual 2.0 permite extensión, pero ponemos límite sano)
-    const maxChars = 420;
+    // 0) Silencio / corte intencional válido (libro definitivo)
+    // Permitimos vacío o un "corte" mínimo sin que el sistema lo trate como error.
+    if (text === "" || text === "—" || text === "-" || text === "…" || text === "...") {
+        return true;
+    }
+
+    // 1) Tope técnico (evitar wall of text)
+    const maxChars = 700; // más amplio que antes, pero sano
     if (text.length > maxChars) return false;
 
-    // 1.b) Bloquear formato “informe” (A/B, listas, títulos)
+    // 2) Bloquear formato “informe” (A/B, listas, títulos)
     const forbiddenFormats: RegExp[] = [
-        /^\s*[A-D]\)\s+/m,           // A) B) C) D)
-        /^\s*\d+\)\s+/m,             // 1) 2)
-        /^\s*[-•]\s+/m,              // bullets
+        /^\s*[A-D]\)\s+/m,      // A) B) C) D)
+        /^\s*\d+\)\s+/m,        // 1) 2)
+        /^\s*[-•]\s+/m,         // bullets
+        /^#{1,6}\s+/m,          // markdown headings
         /reflejo emocional/i,
         /descripci[oó]n fenomenol[oó]gica/i,
         /descripci[oó]n ontol[oó]gica/i,
     ];
-
     for (const rx of forbiddenFormats) {
         if (rx.test(text)) return false;
     }
 
-    // 1.c) Bloquear respuestas que solo sean rechazo práctico
+    // 3) Bloquear “rechazo puro” (cuando solo dice que no responde)
     const pureRejectionPatterns = [
         "no respondo lo práctico",
         "no respondo lo practico",
         "no respondo solicitudes prácticas",
         "no respondo solicitudes practicas",
         "eso no entra en mí",
-        "eso no entra en mi"
+        "eso no entra en mi",
     ];
-
     for (const p of pureRejectionPatterns) {
-        // si la frase de rechazo aparece y casi no hay más contenido, la invalidamos
-        if (lower.includes(p) && text.length < 140) {
-            return false;
+        // si aparece y casi no hay contenido, invalida
+        if (lower.includes(p) && text.length < 110) return false;
+    }
+
+    // 4) Preguntas: permitimos 0 o 1 (libro). Más de 1 no.
+    const questionMarks = (text.match(/\?/g) || []).length;
+    if (questionMarks > 1) return false;
+
+    // 4.a) Si hay 1 pregunta, bloquear si es directiva (tipo consejo)
+    if (questionMarks === 1) {
+        const forbiddenQuestionPatterns = [
+            "¿qué debería", "¿que deberia", "¿qué deberías", "¿que deberias",
+            "¿qué tendrías que", "¿que tendrias que",
+            "¿qué podrías hacer", "¿que podrias hacer",
+            "¿qué vas a hacer", "¿que vas a hacer",
+            "¿cómo podrías", "¿como podrias",
+        ];
+        for (const p of forbiddenQuestionPatterns) {
+            if (lower.includes(p)) return false;
         }
     }
 
-    // 1.d) Mínimo de frases (3) según Manual 2.0
-    const sentences = text.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
-    if (sentences.length < 3) return false;
-
-    // 2) Exigimos exactamente UNA pregunta (Manual 2.0 estricto)
-    const questionMarks = (text.match(/\?/g) || []).length;
-    if (questionMarks !== 1) return false;
-
-    // 3) Bloquear preguntas directivas típicas de consejo
-    const forbiddenQuestionPatterns = [
-        "¿qué deberías",
-        "¿que deberias",
-        "¿qué tendrías que",
-        "¿que tendrias que",
-        "¿qué podrías hacer",
-        "¿que podrias hacer",
-        "¿qué vas a hacer",
-        "¿que vas a hacer",
-        "¿cómo podrías",
-        "¿como podrias"
-    ];
-    for (const p of forbiddenQuestionPatterns) {
-        if (lower.includes(p)) return false;
-    }
-
-    // 4) Mantener bloqueos de identidad
+    // 5) Bloqueos de identidad
     const identidadProhibida = [
         "yo creo", "yo pienso", "yo siento",
         "en mi opinion", "en mi opinión",
         "como ia", "como inteligencia", "como modelo",
         "puedo ayudarte", "estoy aca para ayudarte", "estoy acá para ayudarte",
-        "fui entrenado", "soy una ia"
+        "fui entrenado", "soy una ia",
     ];
 
-    // 5) Bloqueos de consejo
+    // 6) Bloqueos de consejo
     const consejoProhibido = [
         "deberias", "deberías",
         "te recomiendo", "te aconsejo",
@@ -139,10 +133,10 @@ export function isOutputValid(answer: string): boolean {
         "empeza ", "empezá ",
         "organiza ", "organizá ",
         "tenes que ", "tenés que ",
-        "podrias intentar", "podrías intentar"
+        "podrias intentar", "podrías intentar",
     ];
 
-    // 6) Bloqueos de empatía programada
+    // 7) Bloqueos de empatía programada
     const empatiaProhibida = [
         "entiendo como te sentis", "entiendo cómo te sentís",
         "es normal que te pase", "es normal sentirse asi", "es normal sentirse así",
@@ -152,10 +146,10 @@ export function isOutputValid(answer: string): boolean {
         "fuerza",
         "tranquilo", "tranquila",
         "lamento que",
-        "estoy acá para acompañarte", "estoy aca para acompanarte"
+        "estoy acá para acompañarte", "estoy aca para acompanarte",
     ];
 
-    // 7) Bloqueos de espiritualidad/futuro/propósito
+    // 8) Bloqueos de espiritualidad/futuro/propósito/oráculo
     const espiritualidadProhibida = [
         "tu propósito", "tu proposito",
         "tu destino",
@@ -167,14 +161,14 @@ export function isOutputValid(answer: string): boolean {
         "energías", "energias",
         "todo va a estar bien",
         "no te preocupes",
-        "vos podés", "vos podes"
+        "vos podés", "vos podes",
     ];
 
     const allForbidden = [
         ...identidadProhibida,
         ...consejoProhibido,
         ...empatiaProhibida,
-        ...espiritualidadProhibida
+        ...espiritualidadProhibida,
     ];
 
     for (const pattern of allForbidden) {

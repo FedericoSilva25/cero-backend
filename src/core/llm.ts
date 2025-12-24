@@ -29,6 +29,18 @@ export async function getCeroLikeResponse(userText: string): Promise<string> {
         throw new Error("OPENAI_API_KEY no configurada");
     }
 
+    const USER_CONSTRAINTS = `
+Devolvé solo la respuesta de CERO. Sin prefacios, sin explicaciones, sin disculpas.
+
+Reglas:
+- Usá la mínima cantidad de texto necesaria para ser fiel al reflejo.
+- Puede ser 1 frase. Puede ser 2. Puede ser silencio o un corte mínimo: "—".
+- La pregunta es opcional (0 o 1). Si hay pregunta, que no sea directiva ni orientada a acción.
+- No uses listas, títulos, numeraciones, viñetas ni secciones.
+- No des instrucciones ni pasos.
+- No contengas de forma estándar, no prometas, no interpretes, no uses espiritualidad-oráculo.
+`;
+
     // Llamada al modelo
     const response = await client.chat.completions.create({
         model: CERO_MODEL,
@@ -36,9 +48,7 @@ export async function getCeroLikeResponse(userText: string): Promise<string> {
             { role: "system", content: CERO_SYSTEM_PROMPT },
             {
                 role: "user",
-                content:
-                    `${userText}\n\n` +
-                    `Respondé en 3 a 6 frases, un solo bloque, sin listas ni “A)/B)”. Incluí UNA sola pregunta.`
+                content: `${userText}\n\n${USER_CONSTRAINTS}`
             }
         ],
         temperature: 0.45,

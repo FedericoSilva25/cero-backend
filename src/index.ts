@@ -29,22 +29,24 @@ app.post("/reflect", async (req, res) => {
             });
         }
 
-        // 1) Filtro de entrada: corta lo práctico
-        const { isPractical, category } = classifyInput(text);
-        if (isPractical) {
-            return res.json({
-                reply: getRandomRejection(),
-                rejected: true,
-                category
-            });
-        }
+        // 1) Filtro de entrada: clasificamos pero NO cortamos
+        const { isPractical } = classifyInput(text);
+
+        // Contexto interno para el modelo (invisible al usuario)
+        const internalContext = isPractical
+            ? "Nota interna: el usuario está pidiendo utilidad/acción. No resolver. Reflejar el impulso de delegar dirección."
+            : "";
+
+        const modelInput = internalContext
+            ? `${internalContext}\n\nTexto del usuario:\n${text}`
+            : text;
 
         // 2) Llamada al modelo real de CERO (OpenAI) con reintentos
         let rawAnswer = "";
         let ok = false;
 
         for (let attempt = 1; attempt <= 3; attempt++) {
-            rawAnswer = await getCeroLikeResponse(text);
+            rawAnswer = await getCeroLikeResponse(modelInput);
 
             if (isOutputValid(rawAnswer)) {
                 ok = true;
@@ -55,7 +57,7 @@ app.post("/reflect", async (req, res) => {
         // 3) Si el modelo no logró pasar el filtro, devolvemos fallback CERO válido
         if (!ok) {
             return res.json({
-                reply: getRandomRejection(), // ya es CERO válido (3–6 frases + 1 pregunta)
+                reply: getRandomRejection(),
                 rejected: true,
                 category: "OUTPUT_FILTER"
             });
@@ -70,7 +72,7 @@ app.post("/reflect", async (req, res) => {
     } catch (e) {
         console.error("[CERO] Error en /reflect:", e);
         return res.json({
-            reply: "No apareció respuesta: el canal se cortó, no el contenido. La ausencia de reflejo también muestra el impulso a cerrar. ¿Qué aparece en vos cuando no hay devolución inmediata? Ese es el borde.",
+            reply: "No hubo devolución.",
             rejected: true,
             category: "ERROR"
         });
