@@ -110,11 +110,18 @@ export function isOutputValid(answer: string): boolean {
             "¿qué podrías hacer", "¿que podrias hacer",
             "¿qué vas a hacer", "¿que vas a hacer",
             "¿cómo podrías", "¿como podrias",
+            "¿cómo estás", "¿como estas",
+            "¿qué te genera", "¿que te genera",
+            "¿qué te preocupa", "¿que te preocupa",
+            "¿te está abrumando", "¿te esta abrumando"
         ];
         for (const p of forbiddenQuestionPatterns) {
             if (lower.includes(p)) return false;
         }
     }
+
+    // 4.b) Bloquear saludo inicial "Hola" (evitar modo conversación humana)
+    if (/^\s*hola\b/i.test(text)) return false;
 
     // 5) Bloqueos de identidad
     const identidadProhibida = [
@@ -123,6 +130,7 @@ export function isOutputValid(answer: string): boolean {
         "como ia", "como inteligencia", "como modelo",
         "puedo ayudarte", "estoy aca para ayudarte", "estoy acá para ayudarte",
         "fui entrenado", "soy una ia",
+        "siento que", "me parece que", "creo que"
     ];
 
     // 6) Bloqueos de consejo
