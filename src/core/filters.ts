@@ -51,26 +51,48 @@ export function classifyInput(text: string): InputClassification {
     };
 }
 
-export function isOutputValid(answer: string): boolean {
+// Helper para similitud (evitar parafraseo)
+function calculateSimilarity(str1: string, str2: string): number {
+    const tokenize = (s: string) => new Set(s.toLowerCase().split(/[\W_]+/).filter(w => w.length > 3));
+    const set1 = tokenize(str1);
+    const set2 = tokenize(str2);
+    if (set1.size === 0 || set2.size === 0) return 0;
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    // Usamos el tamaño del set más chico para ser estrictos con el "eco"
+    return intersection.size / Math.min(set1.size, set2.size);
+}
+
+export function isOutputValid(answer: string, userInput: string = ""): boolean {
     const raw = String(answer ?? "");
     const text = raw.trim();
     const lower = text.toLowerCase();
+    const userLower = userInput.toLowerCase();
 
-    // 0) Silencio / corte intencional válido (libro definitivo)
-    // Silencio/corte intencional válido SOLO si es explícito.
-    // No aceptamos vacío "" porque puede venir de errores o de un modelo “perezoso”.
+    // 0) Silencio / corte intencional válido
     if (text === "—" || text === "-" || text === "…" || text === "...") {
         return true;
     }
 
-    // Si viene vacío, es inválido => fuerza reintento o fallback real.
+    // Si viene vacío, es inválido
     if (text === "") return false;
 
-    // 1) Tope técnico (evitar wall of text)
-    const maxChars = 700; // más amplio que antes, pero sano
+    // 1) Tope técnico
+    const maxChars = 700;
     if (text.length > maxChars) return false;
 
-    // 2) Bloquear formato “informe” (A/B, listas, títulos)
+    // 1.a) Chequeo de parafraseo excesivo (eco terapéutico)
+    if (userInput && calculateSimilarity(text, userInput) > 0.65) {
+        return false;
+    }
+
+    // 1.b) Regla de CORTE OBLIGATORIO
+    // Si el usuario pide "qué hacer", la respuesta NO puede tener preguntas.
+    const practicalTriggers = ["qué hacer", "que hacer", "cómo seguir", "como seguir", "cómo afrontar", "como afrontar", "qué hago", "que hago"];
+    if (practicalTriggers.some(t => userLower.includes(t))) {
+        if (text.includes("?")) return false;
+    }
+
+    // 2) Bloquear formato “informe”
     const forbiddenFormats: RegExp[] = [
         /^\s*[A-D]\)\s+/m,      // A) B) C) D)
         /^\s*\d+\)\s+/m,        // 1) 2)
@@ -84,7 +106,7 @@ export function isOutputValid(answer: string): boolean {
         if (rx.test(text)) return false;
     }
 
-    // 3) Bloquear “rechazo puro” (cuando solo dice que no responde)
+    // 3) Bloquear “rechazo puro”
     const pureRejectionPatterns = [
         "no respondo lo práctico",
         "no respondo lo practico",
@@ -94,15 +116,14 @@ export function isOutputValid(answer: string): boolean {
         "eso no entra en mi",
     ];
     for (const p of pureRejectionPatterns) {
-        // si aparece y casi no hay contenido, invalida
         if (lower.includes(p) && text.length < 110) return false;
     }
 
-    // 4) Preguntas: permitimos 0 o 1 (libro). Más de 1 no.
+    // 4) Preguntas: permitimos 0 o 1.
     const questionMarks = (text.match(/\?/g) || []).length;
     if (questionMarks > 1) return false;
 
-    // 4.a) Si hay 1 pregunta, bloquear si es directiva (tipo consejo)
+    // 4.a) Bloquear preguntas prohibidas (terapéuticas / directivas / primera persona mal usada)
     if (questionMarks === 1) {
         const forbiddenQuestionPatterns = [
             "¿qué debería", "¿que deberia", "¿qué deberías", "¿que deberias",
@@ -114,14 +135,20 @@ export function isOutputValid(answer: string): boolean {
             "¿qué te genera", "¿que te genera",
             "¿qué te preocupa", "¿que te preocupa",
             "¿te está abrumando", "¿te esta abrumando",
-            "¿cómo te sentís", "¿como te sentis"
+            "¿cómo te sentís", "¿como te sentis",
+            "¿qué me preocupa", "¿que me preocupa",
+            "¿qué me genera", "¿que me genera",
+            "¿cómo voy a", "¿como voy a",
+            "¿cómo puedo", "¿como puedo",
+            "¿qué siento", "¿que siento",
+            "¿qué me pasa", "¿que me pasa"
         ];
         for (const p of forbiddenQuestionPatterns) {
             if (lower.includes(p)) return false;
         }
     }
 
-    // 4.b) Bloquear saludo inicial "Hola" (evitar modo conversación humana)
+    // 4.b) Bloquear saludo inicial
     if (/^\s*hola\b/i.test(text)) return false;
 
     // 5) Bloqueos de identidad
@@ -162,7 +189,7 @@ export function isOutputValid(answer: string): boolean {
         "estoy acá para acompañarte", "estoy aca para acompanarte",
     ];
 
-    // 8) Bloqueos de espiritualidad/futuro/propósito/oráculo
+    // 8) Bloqueos de espiritualidad/futuro/propósito
     const espiritualidadProhibida = [
         "tu propósito", "tu proposito",
         "tu destino",

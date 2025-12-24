@@ -48,7 +48,7 @@ app.post("/reflect", async (req, res) => {
         for (let attempt = 1; attempt <= 3; attempt++) {
             rawAnswer = await getCeroLikeResponse(modelInput);
 
-            if (isOutputValid(rawAnswer)) {
+            if (isOutputValid(rawAnswer, text)) {
                 ok = true;
                 break;
             }
