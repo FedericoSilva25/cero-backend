@@ -113,7 +113,8 @@ export function isOutputValid(answer: string): boolean {
             "¿cómo estás", "¿como estas",
             "¿qué te genera", "¿que te genera",
             "¿qué te preocupa", "¿que te preocupa",
-            "¿te está abrumando", "¿te esta abrumando"
+            "¿te está abrumando", "¿te esta abrumando",
+            "¿cómo te sentís", "¿como te sentis"
         ];
         for (const p of forbiddenQuestionPatterns) {
             if (lower.includes(p)) return false;
