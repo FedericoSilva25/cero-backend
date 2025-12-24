@@ -4,15 +4,10 @@
 // Importante: sirven para PRACTICAL_REQUEST y también como fallback cuando el output filter corta.
 const REJECTIONS = [
   "El pedido de dirección es el mecanismo.",
-  "Buscás afuera para no mirar el borde.",
-  "No hay respuesta práctica.",
   "La urgencia por resolver tapa lo que aparece.",
-  "Ahí está el intento de control.",
-  "No resuelvo.",
   "El movimiento es hacia afuera. El borde es hacia adentro.",
-  "Pedís instrucciones para no sentir la duda.",
-  "—",
-  "Silencio."
+  "Pedís una salida para no quedarte en la forma.",
+  "Ahí está el intento de control."
 ];
 
 export function getRandomRejection(): string {

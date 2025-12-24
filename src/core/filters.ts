@@ -57,10 +57,14 @@ export function isOutputValid(answer: string): boolean {
     const lower = text.toLowerCase();
 
     // 0) Silencio / corte intencional válido (libro definitivo)
-    // Permitimos vacío o un "corte" mínimo sin que el sistema lo trate como error.
-    if (text === "" || text === "—" || text === "-" || text === "…" || text === "...") {
+    // Silencio/corte intencional válido SOLO si es explícito.
+    // No aceptamos vacío "" porque puede venir de errores o de un modelo “perezoso”.
+    if (text === "—" || text === "-" || text === "…" || text === "...") {
         return true;
     }
+
+    // Si viene vacío, es inválido => fuerza reintento o fallback real.
+    if (text === "") return false;
 
     // 1) Tope técnico (evitar wall of text)
     const maxChars = 700; // más amplio que antes, pero sano
